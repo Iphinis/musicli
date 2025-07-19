@@ -1,24 +1,29 @@
 import yt_dlp
 import os
+from utils import ensure_dir
+from settings import Settings
 
 class Download:
-    def __init__(self, output_dir: str, formats: list[str] = None):
+    def __init__(self, output_dir:str):
         """
         output_dir: base directory where downloads will be saved
-        formats: list of audio formats to post-process (e.g. ['flac', 'mp3'])
+        format: audiio format to post-process (e.g. 'flac', 'mp3')
         """
-        self.output_dir = output_dir
-        self.formats = formats or ['flac']
-        os.makedirs(self.output_dir, exist_ok=True)
+        self.output_dir=output_dir
+        
+        ensure_dir(self.output_dir)
 
-    def download_url(self, url: str, subfolder: str = '', filename: str = None) -> str:
+    def download_url(self, url:str, subfolder:str='', filename:str=None) -> str:
         """
         Download only audio from a URL into output_dir/subfolder.
         Returns the full path to the downloaded file.
         """
+        if not subfolder:
+            return
+
         # ensure subfolder exists
         target_dir = os.path.join(self.output_dir, subfolder)
-        os.makedirs(target_dir, exist_ok=True)
+        ensure_dir(target_dir)
 
         # construct output template
         if filename:
@@ -31,19 +36,19 @@ class Download:
         # build options
         ydl_opts = {
             'format': 'bestaudio/best',
-            'quiet': True,
+            'quiet': False,
             'outtmpl': outtmpl,
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
-                'preferredcodec': self.formats[0],
-                'preferredquality': '192',
+                'preferredcodec': Settings.get('download', 'preferred_codec'),
+                'preferredquality': Settings.get('download', 'preferred_quality'),
             }]
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
 
         # determine real filename
-        ext = self.formats[0]
+        ext = Settings.get('download', 'preferred_codec')
         title = info.get('title')
         saved_name = filename or f"{title}.{ext}"
         return os.path.join(target_dir, saved_name)

@@ -5,6 +5,7 @@ import os
 import signal
 import time
 
+from settings import Settings
 
 def _new_process_group():
     """Ensure the child starts in a new process group."""
@@ -13,8 +14,8 @@ def _new_process_group():
 class Player:
     def __init__(
         self,
-        player_cmd: str = "mpv",
-        ipc_socket: str = "/tmp/music-player-cli-socket",
+        player_cmd: str = Settings.get('player', 'player_cmd'),
+        ipc_socket: str = Settings.get('player', 'ipc_path'),
         enable_ipc: bool = True,
         disable_video: bool = False,
         socket_timeout: float = 5.0,

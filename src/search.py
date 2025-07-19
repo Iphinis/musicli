@@ -1,22 +1,28 @@
 import yt_dlp
 from fzf import fzf_select
-import os
 import readline
 from download import Download
 from player import Player
+from settings import Settings
+from utils import *
 
 class Search:
-    def __init__(self, library, player:Player=Player()):
+    def __init__(self, library, player:Player=Player(), playlist:str=None):
         """
         library: instance of Library for playlist selection and path management
         player: object with a .play(url: str) method for playback
         """
         self.library = library
         self.player = player
-        self.root_path = self.library.root_path
+        self.playlist = playlist
+
         self.last_query = ''
         self.results_cache = []
-        self.downloader = Download(output_dir=self.root_path)
+        self.downloader = Download(output_dir=Settings.get('library', 'root_path'))
+
+        self._play_text = "Play"
+        self._download_text = "Download"
+        self._back_text = "[ Back ]"
 
     def _input_with_placeholder(self, placeholder: str) -> str:
         """Prefill input with last query as placeholder"""
@@ -25,7 +31,7 @@ class Search:
             readline.redisplay()
         readline.set_pre_input_hook(hook)
         try:
-            return input("Search for a track (^C to quit): ").strip()
+            return input("Search for a track: ").strip()
         finally:
             readline.set_pre_input_hook()
 
@@ -38,7 +44,8 @@ class Search:
             'noplaylist': True,
             'quiet': True,
             'default_search': 'ytsearch',
-            'extract_flat': True
+            'extract_flat': True,
+            'write_thumbnail': True if Settings.get('download', 'thumbnail') == True else False
         }
         with yt_dlp.YoutubeDL(opts) as ydl:
             info = ydl.extract_info(f"ytsearch{max_results}:{query}", download=False)
@@ -49,7 +56,7 @@ class Search:
 
     def get_stream_url(self, video_id: str) -> str:
         """Get the direct audio stream URL for a video ID"""
-        with yt_dlp.YoutubeDL({'format': 'bestaudio/best', 'quiet': True}) as ydl:
+        with yt_dlp.YoutubeDL({'format': 'bestaudio/best', 'quiet': False}) as ydl:
             info = ydl.extract_info(video_id, download=False)
         return info['url']
 
@@ -94,14 +101,16 @@ class Search:
 
                 # multiple selected: batch download
                 if len(items) > 1:
-                    playlist = self.library.select_playlist()
-                    print(f"Downloading {len(items)} tracks to '{playlist}'...", flush=True)
+                    if not self.playlist:
+                        self.playlist = self.library.select_playlist(custom_actions=False)
+                    
+                    print(f"Downloading {len(items)} tracks to '{self.playlist}'...", flush=True)
                     for it in items:
                         url = it.get('webpage_url') or f"https://youtu.be/{it['id']}"
                         filename = it['title'].replace('/', '_') + '.flac'
                         saved = self.downloader.download_url(
                             url,
-                            subfolder=playlist,
+                            subfolder=self.playlist,
                             filename=filename
                         )
                         print(f"Saved to {saved}", flush=True)
@@ -111,20 +120,22 @@ class Search:
 
                 # single item: choose action
                 entry = items[0]
-                action = fzf_select(["Play", "Download", "Back"],
+                action = fzf_select([self._play_text, self._download_text, self._back_text],
                                      multi=False, prompt="Action: ")
-                if not action or action[0] == "Back":
+                if not action or action[0] == self._back_text:
                     continue
-                if action[0] == "Play":
+                if action[0] == self._play_text:
                     self.play_entry(entry)
                     input("Press Enter to continue... ")
-                elif action[0] == "Download":
-                    playlist = self.library.select_playlist()
+                elif action[0] == self._download_text:
+                    if not self.playlist:
+                        self.playlist = self.library.select_playlist(custom_actions=False)
+
                     url = entry.get('webpage_url') or f"https://youtu.be/{entry['id']}"
                     filename = entry['title'].replace('/', '_')
                     saved = self.downloader.download_url(
                         url,
-                        subfolder=playlist,
+                        subfolder=self.playlist,
                         filename=filename
                     )
                     print(f"Saved to {saved}", flush=True)
