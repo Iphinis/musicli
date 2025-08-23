@@ -24,10 +24,8 @@ def fzf_select(options:list[str], multi:bool=False, prompt:str="", start_option:
         "--no-bold",
         "--expect", "ctrl-d,ctrl-z"
     ]
-
     if multi:
         fzf_cmd.append("--multi")
-
     if start_option:
         try:
             idx = options.index(start_option)
@@ -37,16 +35,14 @@ def fzf_select(options:list[str], multi:bool=False, prompt:str="", start_option:
             cursor_pos = 1
         fzf_cmd += ["--bind", f"load:pos({cursor_pos})"]
 
-    fzf = subprocess.Popen(
+    fzf = subprocess.run(
         fzf_cmd,
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
+        input="\n".join(options),
         text=True,
-        start_new_session=True,
+        capture_output=True,
     )
-    stdout, _ = fzf.communicate("\n".join(options))
     
-    if not stdout:
+    if not fzf.stdout:
         return []
     
-    return stdout.strip().split("\n")
+    return fzf.stdout.strip().split("\n")
