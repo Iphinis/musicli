@@ -2,6 +2,8 @@ import subprocess
 import signal
 import os
 
+from settings import Settings
+
 def fzf_select(options:list[str], multi:bool=False, prompt:str="", start_option:str|None=None) -> list[str]:
     """
     Display options in fzf and return selected option(s).

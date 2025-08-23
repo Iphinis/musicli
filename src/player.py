@@ -51,11 +51,15 @@ class Player:
             pass
 
     def _build_cmd(self, target: str) -> list:
-        cmd = [self.player_cmd, "--force-window=yes"]
+        cmd = [
+            self.player_cmd,
+            "--force-window=yes",
+            "--really-quiet",
+        ]
         if self.enable_ipc:
             cmd.append(f"--input-ipc-server={self.ipc_socket}")
         if self.disable_video:
-            cmd.append("--no-video")
+            cmd.append("--video=no")
         cmd.append(target)
         return cmd
 
@@ -66,6 +70,7 @@ class Player:
         cmd = self._build_cmd(target)
         self.process = subprocess.Popen(
             cmd,
+            stdin=subprocess.DEVNULL,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             preexec_fn=_new_process_group

@@ -44,8 +44,7 @@ class Search:
             'noplaylist': True,
             'quiet': True,
             'default_search': 'ytsearch',
-            'extract_flat': True,
-            'write_thumbnail': True if Settings.get('download', 'thumbnail') == True else False
+            'extract_flat': True
         }
         with yt_dlp.YoutubeDL(opts) as ydl:
             info = ydl.extract_info(f"ytsearch{max_results}:{query}", download=False)

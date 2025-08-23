@@ -33,16 +33,47 @@ class Download:
             out_name = '%(title)s.%(ext)s'
         outtmpl = os.path.join(target_dir, out_name)
 
+        codec = Settings.get('download', 'preferred_codec')
+        quality = Settings.get('download', 'preferred_quality')
+        thumbnail = True if Settings.get('download', 'thumbnail') == True else False
+
         # build options
         ydl_opts = {
-            'format': 'bestaudio/best',
+            'format': "bestaudio",
             'quiet': False,
+            'no-playlist': True,
+            'no_warnings': True,
+            'restrictfilenames': True,
             'outtmpl': outtmpl,
-            'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': Settings.get('download', 'preferred_codec'),
-                'preferredquality': Settings.get('download', 'preferred_quality'),
-            }]
+
+            'embed-thumbnail': thumbnail,
+            'writethumbnail': thumbnail,
+
+            'postprocessors': [
+                # thumbnail
+                {
+                    'key': 'EmbedThumbnail',
+                },
+                # codec & quality
+                {
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': codec,
+                    'preferredquality': quality
+                },
+                # internal metadata (ID3)
+                {
+                    'key': 'FFmpegMetadata',
+                },
+            ],
+
+            'xattrs': True, # external metadata (e.g. link)
+            'writeinfojson': True, # write metadata in a .info.json
+
+            # network settings
+            'socket_timeout': 30,
+            'retries': 10,
+            'fragment_retries': 10,
+            'continuedl': True,
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
