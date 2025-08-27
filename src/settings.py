@@ -1,6 +1,27 @@
 import os
 import configparser
 from pathlib import Path
+import sys, subprocess
+
+def open_path(path: Path) -> None:
+    """
+    Open a directory or file with the system default application.
+    On Linux: uses xdg-open
+    On macOS: uses open
+    On Windows: uses os.startfile
+    """
+    p = Path(path)
+    if not p.exists():
+        raise FileNotFoundError(f"{p!r} does not exist")
+
+    if sys.platform == "darwin":
+        subprocess.run(["open", str(p)])
+    elif sys.platform == "win32":
+        # os.startfile only exists on Windows
+        os.startfile(str(p))
+    else:
+        # assume Linux / XDG‑compliant desktop
+        subprocess.run(["xdg-open", str(p)], check=False)
 
 class Settings():
     if 'APPDATA' in os.environ:
@@ -101,3 +122,11 @@ class Settings():
             cls.config[section] = {}
         cls.config[section][option] = value
         cls._save()
+
+    @classmethod
+    def run(cls):
+        try:
+            path = Settings.get_settings_path().parent if Settings.get('app', 'settings_directory') == "True" else Settings.get_settings_path()
+            open_path(path)
+        except KeyboardInterrupt:
+            pass

@@ -1,10 +1,9 @@
 import subprocess
-import signal
 import os
 
 from settings import Settings
 
-def fzf_select(options:list[str], multi:bool=False, prompt:str="", start_option:str|None=None) -> list[str]:
+def fzf_select(options:list[str], multi:bool=False, prompt:str="", start_option:str|None=None, raise_except:bool=False) -> list[str]:
     """
     Display options in fzf and return selected option(s).
 
@@ -41,6 +40,9 @@ def fzf_select(options:list[str], multi:bool=False, prompt:str="", start_option:
         text=True,
         capture_output=True,
     )
+
+    if raise_except and fzf.returncode != 0:
+        raise KeyboardInterrupt
     
     if not fzf.stdout:
         return []

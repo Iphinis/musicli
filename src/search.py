@@ -9,8 +9,8 @@ from utils import *
 class Search:
     def __init__(self, library, player:Player=Player(), playlist:str=None):
         """
-        library: instance of Library for playlist selection and path management
-        player: object with a .play(url: str) method for playback
+        library: Library for playlist selection and path management
+        player: Player object for playback
         """
         self.library = library
         self.player = player
@@ -77,7 +77,6 @@ class Search:
             try:
                 query = self._input_with_placeholder(self.last_query)
             except (EOFError, KeyboardInterrupt):
-                print("Exiting...", flush=True)
                 break
             if not query:
                 continue

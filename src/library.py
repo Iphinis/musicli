@@ -2,12 +2,15 @@ from settings import Settings
 import os
 from fzf import fzf_select
 from search import Search
+from player import Player
 
 from utils import *
 
 class Library:
-    def __init__(self):
+    def __init__(self, player:Player):
         ensure_dir(Settings.get('library', 'root_path'))
+
+        self.player = player
 
         self.music_formats = Settings.get('library', 'music_formats').split(',')
 
@@ -31,7 +34,7 @@ class Library:
         playlists = []
         try:
             playlists = [d for d in os.listdir(Settings.get('library', 'root_path')) \
-                 if os.path.isdir(os.path.join(Settings.get('library', 'root_path'), d)) and (not d.startswith('.') if Settings.get('library', 'hidden_files') == 'False' else True)]
+                if os.path.isdir(os.path.join(Settings.get('library', 'root_path'), d)) and (not d.startswith('.') if Settings.get('library', 'hidden_files') == 'False' else True)]
         except FileNotFoundError:
             return playlists
         
@@ -71,32 +74,9 @@ class Library:
             case _:
                 return tracks
 
-    def create_playlist(self) -> None:
-        """Create a new playlist folder"""
-        name = input("Enter new playlist name: ").strip()
-        if name:
-            path = self.get_playlist_path(name)
-            ensure_dir(path)
-        return name
-    
-    def remove_playlist(self, prompt="Select a playlist to DELETE: ") -> None:
-        """
-        Remove a playlist folder and returns its name
-        Returns '' if it did not succeed.
-        """
-        playlist = self.select_playlist(prompt=prompt, custom_actions=False)
-        if playlist:
-            path = self.get_playlist_path(playlist)
-            try:
-                os.rmdir(path)
-                return playlist
-            except OSError as e:
-                return self.remove_playlist(str(e))
-        return ''
-
     def select_playlist(self, prompt="Select a playlist: ", custom_actions=True) -> str | None:
         """
-        Let user select a playlist, create new, or go back.
+        Let user select/add/remove a playlist, or go back.
         Returns chosen playlist name or None if back.
         """
         options = self.get_playlists() + self.actions
@@ -114,8 +94,10 @@ class Library:
         elif choice == self._playlist_add_text:
             self.current_option = choice
             playlist = self.create_playlist()
-            self.current_playlist = playlist
-            choice = playlist
+            if playlist:
+                self.current_playlist = playlist
+                choice = playlist
+            return ''
         # remove playlist option
         elif choice == self._playlist_remove_text:
             self.current_option = choice
@@ -129,21 +111,36 @@ class Library:
             else:
                 choice = playlist
                 self.current_playlist = playlist
+            return ''
 
         return choice
-    
-    def add_track(self) -> None:
-        Search(self, playlist=self.current_playlist).run()
-    
-    def delete_track(self, prompt=f"Select a track to DELETE: ") -> None:
-        """Delete a track"""
-        track = self.select_track(self.current_playlist, prompt=prompt, custom_actions=False)
-        if track:
-            path = self.get_track_path(self.current_playlist, track)
+
+    def create_playlist(self) -> None:
+        """Create a new playlist folder"""
+        try:
+            name = input("Enter new playlist name: ").strip()
+            if name:
+                path = self.get_playlist_path(name)
+                ensure_dir(path)
+                return name
+        except KeyboardInterrupt:
+            pass
+        finally:
+            return ''
+
+    def remove_playlist(self, prompt="Select a playlist to DELETE: ") -> None:
+        """
+        Remove a playlist folder and returns its name
+        Returns '' if it did not succeed.
+        """
+        playlist = self.select_playlist(prompt=prompt, custom_actions=False)
+        if playlist:
+            path = self.get_playlist_path(playlist)
             try:
-                os.remove(path)
+                os.rmdir(path)
+                return playlist
             except OSError as e:
-                return self.delete_track(str(e))
+                return self.remove_playlist(str(e))
         return ''
 
     def select_track(self, playlist:str, prompt="Select a track: ", custom_actions=True) -> str|None:
@@ -173,3 +170,50 @@ class Library:
 
         self.current_track = choice
         return choice
+
+    def add_track(self) -> None:
+        Search(library=self, player=self.player, playlist=self.current_playlist).run()
+
+    def delete_track(self, prompt=f"Select a track to DELETE: ") -> None:
+        """Delete a track"""
+        track = self.select_track(self.current_playlist, prompt=prompt, custom_actions=False)
+        if track:
+            path = self.get_track_path(self.current_playlist, track)
+            try:
+                os.remove(path)
+            except OSError as e:
+                return self.delete_track(str(e))
+        return ''
+
+    def playlist_action(self):
+        """Library button action"""
+        playlist = self.select_playlist()
+
+        # no choice or back option
+        if playlist is None:
+            return None
+
+        if playlist == '' or playlist not in self.get_playlists():
+            return self.playlist_action()
+        
+        return playlist
+
+    def run(self):
+        """Display library"""
+        while True:
+            # enter into the playlist
+            playlist = self.playlist_action()
+
+            if not playlist:
+                break
+
+            if playlist == '':
+                continue
+
+            # choose a track
+            while True:
+                track = self.select_track(playlist)
+                if not track:
+                    break
+                path = self.get_track_path(playlist, track)
+                self.player.play_track(path)
