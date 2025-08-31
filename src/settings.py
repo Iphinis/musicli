@@ -1,7 +1,8 @@
 import os
 import configparser
 from pathlib import Path
-import sys, subprocess
+import platform
+import subprocess
 
 def open_path(path: Path) -> None:
     """
@@ -14,14 +15,16 @@ def open_path(path: Path) -> None:
     if not p.exists():
         raise FileNotFoundError(f"{p!r} does not exist")
 
-    if sys.platform == "darwin":
-        subprocess.run(["open", str(p)])
-    elif sys.platform == "win32":
-        # os.startfile only exists on Windows
-        os.startfile(str(p))
-    else:
-        # assume Linux / XDG‑compliant desktop
-        subprocess.run(["xdg-open", str(p)], check=False)
+    match platform.system():
+        case "Linux":
+            subprocess.run(["xdg-open", str(p)], check=False)
+        case "Darwin":
+            subprocess.run(["open", str(p)])
+        case "Windows":
+            # os.startfile only exists on Windows
+            os.startfile(str(p))
+        case _:
+            raise OSError("OS not recognized. Cannot open path.")
 
 class Settings():
     if 'APPDATA' in os.environ:
@@ -39,7 +42,8 @@ class Settings():
     _DEFAULTS = {
         'app': {
             'settings_directory': 'True',
-            'clear_screen': 'True'
+            'clear_screen': 'True',
+            'debug': 'False',
         },
         'player': {
             'player_cmd': 'mpv',
@@ -50,12 +54,12 @@ class Settings():
             'music_formats': 'mp3,wav,opus,flac,m4a',
             'hidden_files': 'False',
             'sort_playlists_by': 'name',
-            'sort_tracks_by': 'name'
+            'sort_tracks_by': 'name',
         },
         'download': {
             'preferred_codec': 'flac',
-            'preferred_quality': '320',
-            'thumbnail': 'True'
+            'preferred_quality': 'best',
+            'embed_thumbnail': 'True',
         }
     }
 

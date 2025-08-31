@@ -13,6 +13,7 @@ requests = "==2.32.4"
 urllib3 = "==2.5.0"
 yarg = "==0.1.10"
 yt-dlp = "==2025.6.30"
+mutagen = "*"
 
 [dev-packages]
 

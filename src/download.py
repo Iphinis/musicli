@@ -1,6 +1,9 @@
 import yt_dlp
 import os
 from utils import ensure_dir
+import platform
+import subprocess
+
 from settings import Settings
 
 class Download:
@@ -13,73 +16,93 @@ class Download:
         
         ensure_dir(self.output_dir)
 
-    def download_url(self, url:str, subfolder:str='', filename:str=None) -> str:
+    def download_url(self, url:str, subfolder:str, filename:str='') -> str:
         """
         Download only audio from a URL into output_dir/subfolder.
         Returns the full path to the downloaded file.
         """
         if not subfolder:
-            return
+            raise ValueError("Subfolder must be provided")
 
         # ensure subfolder exists
         target_dir = os.path.join(self.output_dir, subfolder)
         ensure_dir(target_dir)
 
-        # construct output template
-        if filename:
-            out_name = filename
-        else:
-            # use yt-dlp default title replacement
-            out_name = '%(title)s.%(ext)s'
-        outtmpl = os.path.join(target_dir, out_name)
+        # print('%(id)s.%(ext)s')
 
-        codec = Settings.get('download', 'preferred_codec')
-        quality = Settings.get('download', 'preferred_quality')
-        thumbnail = True if Settings.get('download', 'thumbnail') == True else False
+        filename = (filename or '%(title)s') + '.%(ext)s'
+        outtmpl = os.path.join(target_dir, filename)
+
+        preferred_codec = Settings.get('download', 'preferred_codec')
+        preferred_quality = Settings.get('download', 'preferred_quality')
+        embed_thumbnail = True if Settings.get('download', 'embed_thumbnail') == 'True' else False
 
         # build options
         ydl_opts = {
-            'format': "bestaudio",
-            'quiet': False,
-            'no-playlist': True,
-            'no_warnings': True,
-            'restrictfilenames': True,
-            'outtmpl': outtmpl,
+            'format': "bestaudio/best", # best as fallback
+            'verbose': Settings.get('app', 'debug') == 'True',
+            'outtmpl': outtmpl, # output path
 
-            'embed-thumbnail': thumbnail,
-            'writethumbnail': thumbnail,
+            'writethumbnail': embed_thumbnail,
+            'embedthumbnail': embed_thumbnail,
+            'embedmetadata': True,
 
+            # process the final audio file
             'postprocessors': [
-                # thumbnail
+                # internal metadata (ID3)
                 {
-                    'key': 'EmbedThumbnail',
+                    'key': 'FFmpegMetadata',
+                    'add_metadata': True,
                 },
                 # codec & quality
                 {
                     'key': 'FFmpegExtractAudio',
-                    'preferredcodec': codec,
-                    'preferredquality': quality
+                    'preferredcodec': preferred_codec,
+                    'preferredquality' : preferred_quality,
                 },
-                # internal metadata (ID3)
+                # embed thumbnail
                 {
-                    'key': 'FFmpegMetadata',
+                    'key': 'EmbedThumbnail',
                 },
             ],
 
-            'xattrs': True, # external metadata (e.g. link)
-            'writeinfojson': True, # write metadata in a .info.json
+            'xattrs': True, # internal metadata (e.g. link)
 
             # network settings
             'socket_timeout': 30,
-            'retries': 10,
-            'fragment_retries': 10,
-            'continuedl': True,
+            'retries': 10, # retry attempts when download fails
+            'fragment_retries': 10, # retry attempts for fragment downloads (DASH/HLS)
+            'continuedl': True, # allow resuming partially-downloaded files
         }
+
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
 
-        # determine real filename
-        ext = Settings.get('download', 'preferred_codec')
-        title = info.get('title')
-        saved_name = filename or f"{title}.{ext}"
-        return os.path.join(target_dir, saved_name)
+        # add OS specific xattr metadata for source url, if supported.
+        final_path = None
+        if info.get("requested_downloads"):
+            final_path = info["requested_downloads"][0].get("filepath")
+        elif info.get("_filename"):
+            final_path = info["_filename"]
+        elif info.get("filepath"):
+            final_path = info["filepath"]
+        
+        if final_path:
+            final_path = os.path.abspath(final_path)
+            try:
+                match platform.system():
+                    case "Linux":
+                        os.setxattr(final_path, "user.xdg.origin.url", url.encode("utf-8"))
+                    case "Darwin":
+                        subprocess.run(["xattr", "-w", "com.apple.metadata:kMDItemWhereFroms", url, final_path], check=False)
+                    case "Windows":
+                        ads_name = final_path + ":xdg.origin.url"
+                        with open(ads_name, "w", encoding="utf-8") as ads:
+                            ads.write(url)
+                    case _:
+                        raise OSError("OS not recognized. Cannot set url xattr metadata.")
+            except Exception as e:
+                # ignore if setting xattr fails (filesystem or OS may not support it)
+                print(f"[warn] failed to set xattr on {final_path}: {e}")
+
+        return final_path

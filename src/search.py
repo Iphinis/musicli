@@ -62,7 +62,7 @@ class Search:
     def play_entry(self, entry: dict):
         """Playback via injected player"""
         url = self.get_stream_url(entry['id'])
-        print(f"Playing: {entry['title']}", flush=True)
+        print(f"Playing: {entry['title']}")
         self.player.play_url(url)
 
     def format_entry(self, e: dict) -> str:
@@ -83,7 +83,7 @@ class Search:
 
             entries = self.search_youtube(query)
             if not entries:
-                print("No results found.", flush=True)
+                print("No results found.")
                 continue
 
             while True:
@@ -102,7 +102,7 @@ class Search:
                     if not self.playlist:
                         self.playlist = self.library.select_playlist(custom_actions=False)
                     
-                    print(f"Downloading {len(items)} tracks to '{self.playlist}'...", flush=True)
+                    print(f"Downloading {len(items)} tracks to '{self.playlist}'...")
                     for it in items:
                         url = it.get('webpage_url') or f"https://youtu.be/{it['id']}"
                         filename = it['title'].replace('/', '_') + '.flac'
@@ -111,8 +111,8 @@ class Search:
                             subfolder=self.playlist,
                             filename=filename
                         )
-                        print(f"Saved to {saved}", flush=True)
-                    print("All downloads complete.", flush=True)
+                        print(f"Saved to {saved}")
+                    print("All downloads complete.")
                     input("Press Enter to continue... ")
                     continue
 
@@ -130,11 +130,9 @@ class Search:
                         self.playlist = self.library.select_playlist(custom_actions=False)
 
                     url = entry.get('webpage_url') or f"https://youtu.be/{entry['id']}"
-                    filename = entry['title'].replace('/', '_')
                     saved = self.downloader.download_url(
                         url,
                         subfolder=self.playlist,
-                        filename=filename
                     )
-                    print(f"Saved to {saved}", flush=True)
+                    print(f"Saved to {saved}")
                     input("Press Enter to continue... ")
