@@ -16,7 +16,11 @@ After installing the minimal dependencies listed above:
 ```
 pipenv install
 ```
-3. Run the program:
+2. Use the pipenv shell with the installed dependencies:
+```
+pipenv shell
+```
+4. Run the program:
 ```
 python src/main.py
 ```
