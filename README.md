@@ -16,7 +16,7 @@ After installing the minimal dependencies listed above:
 ```
 pipenv install
 ```
-2. Use the pipenv shell with the installed dependencies:
+3. Use the pipenv shell with the installed dependencies:
 ```
 pipenv shell
 ```
