@@ -116,7 +116,7 @@ class Search:
                             filename=filename
                         )
                         print(f"Saved to {saved}")
-                    print("All downloads complete.")
+                    print("End of download(s).")
                     input("Press Enter to continue...")
                     continue
 

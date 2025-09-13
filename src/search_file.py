@@ -55,6 +55,8 @@ class SearchFile(Search):
                 continue
 
             self.playlist = self.library.select_playlist(custom_actions=False)
+            if not self.playlist:
+                break
 
             print(f"Downloading {len(queries)} tracks to '{self.playlist}'...")
 
@@ -66,10 +68,10 @@ class SearchFile(Search):
 
                 parsed = urlparse(query)
                 is_url = bool(parsed.scheme and parsed.netloc)
+                filename = ''
                 if is_url:
                     # direct download without confirmation
                     url = query
-                    filename = sanitize(query) or f"download_{(timedelta(days=int(ttl_days))).strftime('%Y-%m-%dT%H:%M:%SZ')}"
                 else:
                     # otherwise manual confirmation is required
                     entries = self.search_youtube(query, max_results=1)
@@ -104,11 +106,8 @@ class SearchFile(Search):
                     subfolder=self.playlist,
                     filename=filename
                 )
-                title = entry.get('title') if not is_url and 'entry' in locals() else None
-                if title:
-                    print(f"Saved: {title} -> {saved}")
-                else:
-                    print(f"Saved: {saved}")
+                
+                print(f"Saved: {saved}")
                 i += 1
 
             print("End of download(s).")

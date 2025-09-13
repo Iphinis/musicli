@@ -34,8 +34,6 @@ class Download:
         target_dir = os.path.join(self.output_dir, subfolder)
         ensure_dir(target_dir)
 
-        # print('%(id)s.%(ext)s')
-
         filename = (filename or '%(title)s') + '.%(ext)s'
         outtmpl = os.path.join(target_dir, filename)
 
@@ -84,7 +82,7 @@ class Download:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
 
-        # add OS specific xattr metadata for source url, if supported.
+        # final path
         final_path = None
         if info.get("requested_downloads"):
             final_path = info["requested_downloads"][0].get("filepath")
@@ -95,6 +93,7 @@ class Download:
         
         if final_path:
             final_path = os.path.abspath(final_path)
+            # add OS specific xattr metadata for source url, if supported.
             try:
                 match platform.system():
                     case "Linux":
