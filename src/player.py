@@ -1,3 +1,5 @@
+"""player.py"""
+
 import subprocess
 import socket
 import json

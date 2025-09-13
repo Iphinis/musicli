@@ -1,3 +1,4 @@
+"""fzf.py"""
 import subprocess
 import os
 
@@ -11,7 +12,7 @@ def fzf_select(options:list[str], multi:bool=False, prompt:str="", start_option:
         options: List of strings to show in fzf.
         multi: If True, allow multi-selection.
         prompt: Prompt text to display.
-        start_index: If provided, initial highlighted position (0-based).
+        start_option: If provided, initial highlighted option.
     """
     
     fzf_cmd = [

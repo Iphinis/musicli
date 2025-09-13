@@ -1,3 +1,4 @@
+"""library.py"""
 from settings import Settings
 import os
 from fzf import fzf_select

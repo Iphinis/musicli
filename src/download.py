@@ -1,3 +1,4 @@
+"""download.py"""
 import yt_dlp
 import os
 from utils import ensure_dir
@@ -7,6 +8,10 @@ import subprocess
 from settings import Settings
 
 class Download:
+    """
+    Download an audio file.
+    """
+    
     def __init__(self, output_dir:str):
         """
         output_dir: base directory where downloads will be saved
@@ -20,6 +25,7 @@ class Download:
         """
         Download only audio from a URL into output_dir/subfolder.
         Returns the full path to the downloaded file.
+        Warning: overwrites file if it already exists.
         """
         if not subfolder:
             raise ValueError("Subfolder must be provided")
@@ -35,12 +41,12 @@ class Download:
 
         preferred_codec = Settings.get('download', 'preferred_codec')
         preferred_quality = Settings.get('download', 'preferred_quality')
-        embed_thumbnail = True if Settings.get('download', 'embed_thumbnail') == 'True' else False
+        embed_thumbnail = Settings.get_bool('download', 'embed_thumbnail')
 
         # build options
         ydl_opts = {
             'format': "bestaudio/best", # best as fallback
-            'verbose': Settings.get('app', 'debug') == 'True',
+            'verbose': Settings.get_bool('app', 'debug'),
             'outtmpl': outtmpl, # output path
 
             'writethumbnail': embed_thumbnail,

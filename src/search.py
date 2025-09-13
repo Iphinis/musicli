@@ -1,4 +1,7 @@
+"""search.py"""
 import yt_dlp
+from sanitize_filename import sanitize
+
 from fzf import fzf_select
 import readline
 from download import Download
@@ -24,18 +27,20 @@ class Search:
         self._download_text = "Download"
         self._back_text = "[ Back ]"
 
-    def _input_with_placeholder(self, placeholder: str) -> str:
+    def _input_with_placeholder(self, placeholder:str) -> str:
         """Prefill input with last query as placeholder"""
         def hook():
             readline.insert_text(placeholder)
             readline.redisplay()
         readline.set_pre_input_hook(hook)
         try:
-            return input("Search for a track: ").strip()
+            inp = input("Search for a track: ").strip()
+            self.last_query = inp
+            return inp
         finally:
             readline.set_pre_input_hook()
 
-    def search_youtube(self, query: str, max_results: int = 10) -> list[dict]:
+    def search_youtube(self, query:str, max_results:int = 10) -> list[dict]:
         """Search YouTube for a query, with simple caching"""
         if query == self.last_query and self.results_cache:
             return self.results_cache
@@ -49,11 +54,10 @@ class Search:
         with yt_dlp.YoutubeDL(opts) as ydl:
             info = ydl.extract_info(f"ytsearch{max_results}:{query}", download=False)
         entries = info.get('entries') or []
-        self.last_query = query
         self.results_cache = entries
         return entries
 
-    def get_stream_url(self, video_id: str) -> str:
+    def get_stream_url(self, video_id:str) -> str:
         """Get the direct audio stream URL for a video ID"""
         with yt_dlp.YoutubeDL({'format': 'bestaudio/best', 'quiet': False}) as ydl:
             info = ydl.extract_info(video_id, download=False)
@@ -65,7 +69,7 @@ class Search:
         print(f"Playing: {entry['title']}")
         self.player.play_url(url)
 
-    def format_entry(self, e: dict) -> str:
+    def format_entry(self, e:dict) -> str:
         title = e.get('title', 'Unknown')
         author = e.get('channel') or e.get('uploader') or 'Unknown'
         dur = int(e.get('duration') or 0); m, s = divmod(dur, 60)
@@ -105,7 +109,7 @@ class Search:
                     print(f"Downloading {len(items)} tracks to '{self.playlist}'...")
                     for it in items:
                         url = it.get('webpage_url') or f"https://youtu.be/{it['id']}"
-                        filename = it['title'].replace('/', '_') + '.flac'
+                        filename = sanitize(it['title'])
                         saved = self.downloader.download_url(
                             url,
                             subfolder=self.playlist,
@@ -113,7 +117,7 @@ class Search:
                         )
                         print(f"Saved to {saved}")
                     print("All downloads complete.")
-                    input("Press Enter to continue... ")
+                    input("Press Enter to continue...")
                     continue
 
                 # single item: choose action
@@ -124,7 +128,7 @@ class Search:
                     continue
                 if action[0] == self._play_text:
                     self.play_entry(entry)
-                    input("Press Enter to continue... ")
+                    input("Press Enter to continue...")
                 elif action[0] == self._download_text:
                     if not self.playlist:
                         self.playlist = self.library.select_playlist(custom_actions=False)
@@ -135,4 +139,4 @@ class Search:
                         subfolder=self.playlist,
                     )
                     print(f"Saved to {saved}")
-                    input("Press Enter to continue... ")
+                    input("Press Enter to continue...")
