@@ -4,6 +4,7 @@ import os
 from fzf import fzf_select
 from search import Search
 from player import Player
+from queue_manager import QueueManager
 
 from utils import *
 
@@ -12,6 +13,8 @@ class Library:
         ensure_dir(Settings.get('library', 'root_path'))
 
         self.player = player
+
+        self.queue = QueueManager(self.player)
 
         self.music_formats = Settings.get('library', 'music_formats').split(',')
 
@@ -80,11 +83,17 @@ class Library:
         Let user select/add/remove a playlist, or go back.
         Returns chosen playlist name or None if back.
         """
-        options = self.get_playlists() + self.actions
+        options = self.get_playlists()
         if custom_actions:
             options = self.playlist_actions + options
+        options = self.actions + options
 
-        sel = fzf_select(options, multi=False, prompt=prompt, start_option=self.current_playlist) or []
+        sel = fzf_select(
+            options,
+            multi=False,
+            prompt=prompt,
+            start_option=self.current_playlist
+        ) or []
         choice = sel[0] if sel else None
 
         # no choice (e.g SIGTERM signal) or back option
@@ -113,6 +122,8 @@ class Library:
                 choice = playlist
                 self.current_playlist = playlist
             return ''
+        else:
+            self.current_playlist = choice
 
         return choice
 
@@ -151,9 +162,10 @@ class Library:
         """
         tracks = self.get_tracks(playlist)
 
-        options = tracks + self.actions
+        options = tracks
         if custom_actions:
             options = self.track_actions + options
+        options = self.actions + options
         
         sel = fzf_select(options, multi=False, prompt=f"{playlist} - {prompt}", start_option=self.current_track) or []
         choice = sel[0] if sel else None
@@ -214,7 +226,25 @@ class Library:
             # choose a track
             while True:
                 track = self.select_track(playlist)
+
                 if not track:
                     break
+
                 path = self.get_track_path(playlist, track)
-                self.player.play_track(path)
+
+                # manage queue
+                tracks = self.get_tracks(playlist)
+                try:
+                    idx = tracks.index(track)
+                except ValueError:
+                    print("Selected track not in playlist anymore.")
+                    continue
+
+                ordered = tracks[idx:] + tracks[:idx]
+                paths = [os.path.abspath(self.get_track_path(playlist, t)) for t in ordered]
+
+                # load the queue into mpv
+                self.queue.load_queue(paths)
+
+                self.current_playlist = playlist
+                self.current_track = track

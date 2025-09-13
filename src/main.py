@@ -20,6 +20,7 @@ class MusicPlayer:
         Settings.initialize()
 
         self.actions = ["Library", "Search", "Download", "Settings", "Quit"]
+        self.current_action = None
 
         self.player = Player()
         self.library = Library(self.player)
@@ -56,13 +57,16 @@ class MusicPlayer:
         """
         try:
             while True:
-                choice_list = fzf_select(self.actions, multi=False, \
-                    prompt="Musicli", raise_except=True)
+                choice = fzf_select(
+                    self.actions,
+                    multi=False,
+                    prompt="Musicli",
+                    start_option=self.current_action,
+                    raise_except=True
+                    )[0]
 
-                if not choice_list:
+                if not choice:
                     continue
-
-                choice = choice_list[0]
 
                 if choice == self.actions[0]:
                     self.enter_library()
@@ -74,6 +78,9 @@ class MusicPlayer:
                     self.settings_option()
                 else:
                     break
+
+                self.current_action = choice
+                
         except KeyboardInterrupt:
             pass
         finally:

@@ -92,8 +92,13 @@ class Search:
 
             while True:
                 options = [self.format_entry(e) for e in entries]
-                sel = fzf_select(options, multi=True,
-                                 prompt="Select tracks (TAB select, ENTER to back): ")
+                
+                sel = fzf_select(
+                    options,
+                    multi=True,
+                    prompt="Select tracks (TAB select, ENTER to back): "
+                )
+
                 if not sel:
                     break
 
