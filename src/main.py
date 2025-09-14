@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """main.py"""
 
-from utils import clear_screen
+import utils
 from library import Library
 from player import Player
 from search import Search
@@ -86,7 +86,7 @@ class MusicPlayer:
         finally:
             # stop the active media player
             self.player.stop()
-            clear_screen()
+            utils.clear_screen()
 
 if __name__ == "__main__":
     MusicPlayer().run()

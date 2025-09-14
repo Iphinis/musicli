@@ -6,11 +6,11 @@ from search import Search
 from player import Player
 from queue_manager import QueueManager
 
-from utils import *
+import utils
 
 class Library:
     def __init__(self, player:Player):
-        ensure_dir(Settings.get('library', 'root_path'))
+        utils.ensure_dir(Settings.get('library', 'root_path'))
 
         self.player = player
 
@@ -141,7 +141,7 @@ class Library:
             name = input("Enter new playlist name: ").strip()
             if name:
                 path = self.get_playlist_path(name)
-                ensure_dir(path)
+                utils.ensure_dir(path)
                 return name
         except KeyboardInterrupt:
             pass

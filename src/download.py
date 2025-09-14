@@ -1,7 +1,7 @@
 """download.py"""
 import yt_dlp
 import os
-from utils import ensure_dir
+import utils
 import platform
 import subprocess
 from sanitize_filename import sanitize
@@ -16,11 +16,11 @@ class Download:
     def __init__(self, output_dir:str):
         """
         output_dir: base directory where downloads will be saved
-        format: audiio format to post-process (e.g. 'flac', 'mp3')
+        format: audio format to post-process (e.g. 'flac', 'mp3')
         """
         self.output_dir=output_dir
         
-        ensure_dir(self.output_dir)
+        utils.ensure_dir(self.output_dir)
 
     def download_url(self, url:str, subfolder:str, filename:str='') -> str:
         """
@@ -33,7 +33,7 @@ class Download:
 
         # ensure subfolder exists
         target_dir = os.path.join(self.output_dir, subfolder)
-        ensure_dir(target_dir)
+        utils.ensure_dir(target_dir)
 
         filename = (filename or '%(title)s') + '.%(ext)s'
         outtmpl = os.path.join(target_dir, filename)

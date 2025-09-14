@@ -1,11 +1,12 @@
 """search_file.py"""
-import readline
 from sanitize_filename import sanitize
 from urllib.parse import urlparse
 from fzf import fzf_select
 
 from player import Player
 from search import Search
+
+import utils
 
 class SearchFile(Search):
     """
@@ -21,23 +22,11 @@ class SearchFile(Search):
     def __init__(self, library, player:Player=Player(), playlist:str=None):
         super().__init__(library, player, playlist)
 
-    def _input_with_placeholder(self, placeholder: str) -> str:
-        """Prefill input with last path as placeholder"""
-        def hook():
-            readline.insert_text(placeholder)
-            readline.redisplay()
-        readline.set_pre_input_hook(hook)
-        try:
-            inp = input("File path: ").strip()
-            self.last_query = inp
-            return inp
-        finally:
-            readline.set_pre_input_hook()
-
     def run(self):
         while True:
             try:
-                filepath = self._input_with_placeholder(self.last_query)
+                filepath = utils.input_with_placeholder("File path: ", self.last_query)
+                self.last_query = filepath
             except (EOFError, KeyboardInterrupt):
                 break
             if not filepath:
@@ -62,8 +51,9 @@ class SearchFile(Search):
 
             i = 1
             for query in queries:
+                print()
                 if not query:
-                    print(f"Line {i} query ('{query}') is invalid. Skipping.")
+                    print(f"Query {i} ('{query}') is invalid. Skipping.")
                     continue
 
                 parsed = urlparse(query)

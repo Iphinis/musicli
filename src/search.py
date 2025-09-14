@@ -3,11 +3,10 @@ import yt_dlp
 from sanitize_filename import sanitize
 
 from fzf import fzf_select
-import readline
 from download import Download
 from player import Player
 from settings import Settings
-from utils import *
+import utils
 
 class Search:
     def __init__(self, library, player:Player=Player(), playlist:str=None):
@@ -26,19 +25,6 @@ class Search:
         self._play_text = "Play"
         self._download_text = "Download"
         self._back_text = "[ Back ]"
-
-    def _input_with_placeholder(self, placeholder:str) -> str:
-        """Prefill input with last query as placeholder"""
-        def hook():
-            readline.insert_text(placeholder)
-            readline.redisplay()
-        readline.set_pre_input_hook(hook)
-        try:
-            inp = input("Search for a track: ").strip()
-            self.last_query = inp
-            return inp
-        finally:
-            readline.set_pre_input_hook()
 
     def search_youtube(self, query:str, max_results:int = 10) -> list[dict]:
         """Search YouTube for a query, with simple caching"""
@@ -79,9 +65,11 @@ class Search:
     def run(self):
         while True:
             try:
-                query = self._input_with_placeholder(self.last_query)
+                query = utils.input_with_placeholder("Search for a track: ", self.last_query)
+                self.last_query = query
             except (EOFError, KeyboardInterrupt):
                 break
+
             if not query:
                 continue
 
