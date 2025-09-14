@@ -34,14 +34,13 @@ class Settings():
     """
     Manage the settings configuration file.
     """
+    
     if 'APPDATA' in os.environ:
-        _CONFIG_DIR = os.environ['APPDATA']
+        _CONFIG_DIR = Path(os.environ['APPDATA'])
     elif 'XDG_CONFIG_HOME' in os.environ:
-        _CONFIG_DIR = os.environ['XDG_CONFIG_HOME']
+        _CONFIG_DIR = Path(os.environ['XDG_CONFIG_HOME'])
     else:
         _CONFIG_DIR = Path.home() / '.config'
-
-    _CONFIG_DIR /= 'musicli'
     _CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 
     _FILE = _CONFIG_DIR / 'settings.ini'

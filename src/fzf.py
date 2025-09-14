@@ -4,7 +4,7 @@ import os
 
 from settings import Settings
 
-def fzf_select(options:list[str], multi:bool=False, prompt:str="", start_option:str|None=None, raise_except:bool=False) -> list[str]:
+def fzf_select(options:list[str], multi:bool=False, prompt:str="", start_option:str|int=None, raise_except:bool=False) -> list[str]:
     """
     Display options in fzf and return selected option(s).
 
@@ -28,8 +28,11 @@ def fzf_select(options:list[str], multi:bool=False, prompt:str="", start_option:
         fzf_cmd.append("--multi")
     if start_option:
         try:
-            idx = options.index(start_option)
-            cursor_pos = idx + 1  # fzf is 1-based
+            if isinstance(start_option, str):
+                idx = options.index(start_option)
+            elif isinstance(start_option, int):
+                idx = start_option
+            cursor_pos = idx + 1 # fzf is 1-based
         except ValueError:
             # fallback if option not found
             cursor_pos = 1

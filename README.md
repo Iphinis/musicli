@@ -4,7 +4,8 @@
 - `pipenv`
 
 ## Programs
-- [fzf](https://github.com/junegunn/fzf/releases)
+- [fzf](https://github.com/junegunn/fzf/)
+- [ffmpeg](https://ffmpeg.org/)
 - `xdg-user-dirs` and `xdg-utils` (Linux only)
 - [mpv](https://github.com/mpv-player/mpv) (or another media player such as [vlc](https://github.com/videolan/vlc))
 

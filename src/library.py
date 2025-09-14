@@ -78,12 +78,20 @@ class Library:
             case _:
                 return tracks
 
-    def select_playlist(self, prompt="Select a playlist: ", custom_actions=True) -> str | None:
+    def select_playlist(self, prompt:str="Select a playlist: ", custom_actions:bool=True, start_at_first_element:bool=True) -> str|None:
         """
         Let user select/add/remove a playlist, or go back.
         Returns chosen playlist name or None if back.
         """
         options = self.get_playlists()
+
+        if not self.current_playlist and start_at_first_element and len(options) >= 1:
+            start_option = len(self.actions) + (len(self.playlist_actions) if custom_actions else 0)
+        elif self.current_playlist:
+            start_option = self.current_playlist
+        else:
+            start_option = 0
+
         if custom_actions:
             options = self.playlist_actions + options
         options = self.actions + options
@@ -92,7 +100,7 @@ class Library:
             options,
             multi=False,
             prompt=prompt,
-            start_option=self.current_playlist
+            start_option=start_option
         ) or []
         choice = sel[0] if sel else None
 
@@ -155,19 +163,30 @@ class Library:
                 return self.remove_playlist(str(e))
         return ''
 
-    def select_track(self, playlist:str, prompt="Select a track: ", custom_actions=True) -> str|None:
+    def select_track(self, playlist:str, prompt:str="Select a track: ", custom_actions:bool=True, start_at_first_element:bool=True) -> str|None:
         """
         Let user select a track in a playlist, or go back.
         Returns track filename or None if back.
         """
-        tracks = self.get_tracks(playlist)
+        options = self.get_tracks(playlist)
 
-        options = tracks
+        if not self.current_track and start_at_first_element and len(options) >= 1:
+            start_option = len(self.actions) + (len(self.track_actions) if custom_actions else 0)
+        elif self.current_track:
+            start_option = self.current_track
+        else:
+            start_option = 0
+
         if custom_actions:
             options = self.track_actions + options
         options = self.actions + options
         
-        sel = fzf_select(options, multi=False, prompt=f"{playlist} - {prompt}", start_option=self.current_track) or []
+        sel = fzf_select(
+            options,
+            multi=False,
+            prompt=f"{playlist} - {prompt}",
+            start_option=start_option
+        ) or []
         choice = sel[0] if sel else None
 
         # add track

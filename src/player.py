@@ -390,7 +390,3 @@ class Player:
 
         if self.enable_ipc:
             self._cleanup_socket()
-
-    def toggle_pause(self) -> None:
-        """Toggle play/pause via IPC."""
-        self._send_command(["cycle", "pause"])

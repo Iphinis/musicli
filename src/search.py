@@ -127,10 +127,15 @@ class Search:
 
                 # single item: choose action
                 entry = items[0]
-                action = fzf_select([self._play_text, self._download_text, self._back_text],
-                                     multi=False, prompt="Action: ")
+                action = fzf_select(
+                    [self._play_text, self._download_text, self._back_text],
+                    multi=False,
+                    prompt="Action: "
+                )
+
                 if not action or action[0] == self._back_text:
                     continue
+
                 if action[0] == self._play_text:
                     self.play_entry(entry)
                     input("Press Enter to continue...")

@@ -4,6 +4,7 @@ import os
 from utils import ensure_dir
 import platform
 import subprocess
+from sanitize_filename import sanitize
 
 from settings import Settings
 
@@ -93,6 +94,27 @@ class Download:
         
         if final_path:
             final_path = os.path.abspath(final_path)
+
+            # sanitize filename
+            try:
+                dirpath, fname = os.path.split(final_path)
+                stem, ext = os.path.splitext(fname)
+                safe_stem = sanitize(stem)
+                if safe_stem != stem:
+                    new_fname = safe_stem + ext
+                    new_path = os.path.join(dirpath, new_fname)
+                    # avoid collision by appending _1, _2...
+                    i = 1
+                    while os.path.exists(new_path):
+                        new_fname = f"{safe_stem}_{i}{ext}"
+                        new_path = os.path.join(dirpath, new_fname)
+                        i += 1
+                    os.rename(final_path, new_path)
+                    final_path = os.path.abspath(new_path)
+            except Exception as e:
+                # keep original if anything goes wrong
+                print(f"[warn] failed to sanitize/rename {final_path}: {e}")
+
             # add OS specific xattr metadata for source url, if supported.
             try:
                 match platform.system():
