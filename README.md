@@ -5,9 +5,9 @@
 
 ## Programs
 - [fzf](https://github.com/junegunn/fzf/)
-- [ffmpeg](https://ffmpeg.org/)
 - `xdg-user-dirs` and `xdg-utils` (Linux only)
-- [mpv](https://github.com/mpv-player/mpv) (or another media player such as [vlc](https://github.com/videolan/vlc))
+- [ffmpeg](https://ffmpeg.org/)
+- [mpv](https://github.com/mpv-player/mpv)
 
 # Installation and usage
 After installing the minimal dependencies listed above:
