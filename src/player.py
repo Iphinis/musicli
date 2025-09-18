@@ -222,7 +222,7 @@ class Player:
                 # notify waiters
                 self._props_cv.notify_all()
 
-    def wait_for_playlist_count(self, expected_count:int, timeout:float=3) -> bool:
+    def wait_for_playlist_count(self, expected_count:int, timeout:float=1) -> bool:
         """
         Wait until mpv reports playlist-count >= expected_count.
         Returns True if condition met, False on timeout.
@@ -352,7 +352,7 @@ class Player:
                 self.start_idle()
 
                 # wait up to socket timeout for playlist to initialize (some mpv versions)
-                self.wait_for_playlist_count(0, timeout=1.0)
+                self.wait_for_playlist_count(0)
 
                 # request loadfile replace
                 self.ipc_send(["loadfile", filepath, "replace"])

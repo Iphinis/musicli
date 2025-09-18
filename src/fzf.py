@@ -35,6 +35,7 @@ def fzf_select(options:list[str], multi:bool=False, prompt:str="", start_option:
             cursor_pos = idx + 1 # fzf is 1-based
         except ValueError:
             # fallback if option not found
+            print("start undefined (fzf): ", start_option)
             cursor_pos = 1
         fzf_cmd += ["--bind", f"load:pos({cursor_pos})"]
 

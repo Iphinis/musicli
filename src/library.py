@@ -7,6 +7,7 @@ from player import Player
 from queue_manager import QueueManager
 
 import utils
+from collections import Counter
 
 class Library:
     def __init__(self, player:Player):
@@ -163,31 +164,49 @@ class Library:
                 return self.remove_playlist(str(e))
         return ''
 
+    def _display_name(self, filename:str) -> str:
+        """Return the name shown to the user (optionally without extension)."""
+        if Settings.get_bool("library", "show_extensions"):
+            return filename
+        return os.path.splitext(filename)[0]
+
     def select_track(self, playlist:str, prompt:str="Select a track: ", custom_actions:bool=True, start_at_first_element:bool=True) -> str|None:
         """
         Let user select a track in a playlist, or go back.
         Returns track filename or None if back.
         """
-        options = self.get_tracks(playlist)
+        raw_options = self.get_tracks(playlist)
+        display_names = [self._display_name(f) for f in raw_options]
 
-        if not self.current_track and start_at_first_element and len(options) >= 1:
-            start_option = len(self.actions) + (len(self.track_actions) if custom_actions else 0)
-        elif self.current_track:
+        # disambiguate duplicate display names by appending extension in parentheses
+        dup_counts = Counter(display_names)
+        for i, name in enumerate(display_names):
+            if dup_counts[name] > 1:
+                ext = os.path.splitext(raw_options[i])[1]
+                display_names[i] = f"{name} ({ext[1:] if ext else ''})"
+
+        fzf_options = list(display_names)
+        if custom_actions:
+            fzf_options = self.track_actions + fzf_options
+        fzf_options = self.actions + fzf_options
+
+        if self.current_track:
             start_option = self.current_track
+        elif start_at_first_element:
+            start_option = len(self.actions) + (len(self.track_actions) if custom_actions else 0)
         else:
             start_option = 0
-
-        if custom_actions:
-            options = self.track_actions + options
-        options = self.actions + options
         
         sel = fzf_select(
-            options,
+            fzf_options,
             multi=False,
             prompt=f"{playlist} - {prompt}",
             start_option=start_option
         ) or []
         choice = sel[0] if sel else None
+
+        if choice:
+            self.current_track = choice
 
         # add track
         if choice == self._track_add_text:
@@ -200,8 +219,10 @@ class Library:
             self.current_track = None
             return None
 
-        self.current_track = choice
-        return choice
+        try:
+            return raw_options[display_names.index(choice)]
+        except:
+            return None
 
     def add_track(self) -> None:
         Search(library=self, player=self.player, playlist=self.current_playlist).run()
@@ -264,6 +285,3 @@ class Library:
 
                 # load the queue into mpv
                 self.queue.load_queue(paths)
-
-                self.current_playlist = playlist
-                self.current_track = track
