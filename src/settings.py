@@ -98,9 +98,8 @@ class Settings():
     @classmethod
     def get(cls, section:str, option:str) -> str:
         """Get a value from settings configuration, with fallback value."""
-        # ensure overall initialization was done
-        if not cls.config.sections():
-            cls.initialize()
+        # ensure overall initialization was done or update values
+        cls.initialize()
 
         # if missing, set default and persist
         if not cls.config.has_section(section) or not cls.config.has_option(section, option):

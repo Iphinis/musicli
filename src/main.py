@@ -28,39 +28,29 @@ class MusicPlayer:
         self.search_file = SearchFile(self.library, self.player)
 
     def enter_library(self) -> None:
-        """
-        Enter library menu.
-        """
+        """Enter library menu."""
         self.library.run()
 
     def search_option(self) -> None:
-        """
-        Enter search menu.
-        """
+        """Enter search menu."""
         self.search.run()
 
     def download_option(self) -> None:
-        """
-        Enter download menu.
-        """
+        """Enter download menu."""
         self.search_file.run()
 
     def settings_option(self) -> None:
-        """
-        Enter settings menu.
-        """
+        """Enter settings menu."""
         Settings.run()
 
     def run(self) -> None:
-        """
-        Run musicli.
-        """
+        """Run musicli."""
         try:
             while True:
                 choice = fzf_select(
                     self.actions,
                     multi=False,
-                    prompt="Musicli",
+                    prompt="Musicli ",
                     start_option=self.current_action,
                     raise_except=True
                     )[0]
